@@ -9,6 +9,12 @@ extern "C"
 {
 #endif
 
+    typedef struct memory_block{
+        void* start;
+        size_t block_size;
+        _Bool free;
+    } memory_block;
+
     /**
      * Initializes the memory manager with a specified size of memory pool.
      * The memory pool could be any data structure, for instance, a large array
