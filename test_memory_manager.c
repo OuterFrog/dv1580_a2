@@ -491,7 +491,7 @@ void test_exceed_cumulative_allocation_multithread(TestParams params)
             pass_count++;
         }
     }
-
+    free(sizes);
     mem_deinit();                 // Clean up the memory manager
     my_barrier_destroy(&barrier); // Destroy the barrier
     if (pass_count >= 1)
@@ -853,38 +853,38 @@ void run_concurrency_test(TestParams params)
 
 /* repeated from A1, as there were solutions that has issues */
 
-void test_looking_for_out_of_bounds(){
-  printf("  Testing outofbounds (errors not tracked/detected here) \n");
+void test_looking_for_out_of_bounds()
+{
+    printf("  Testing outofbounds (errors not tracked/detected here) \n");
 
-  printf("ALLOCATION 5000\n");
-  mem_init(5000); // Initialize with 1024 bytes
-  printf("ALLOCATED 5000\n");
-  void *block0 = mem_alloc(512); // Edge case: zero allocation
-  assert(block0 != NULL);      // Depending on handling, this could also be NULL
-  
-  void *block1 = mem_alloc(512); // 0-1024
-  assert(block1 != NULL);
+    printf("ALLOCATION 5000\n");
+    mem_init(5000); // Initialize with 1024 bytes
+    printf("ALLOCATED 5000\n");
+    void *block0 = mem_alloc(512); // Edge case: zero allocation
+    assert(block0 != NULL);        // Depending on handling, this could also be NULL
 
-  void *block2 = mem_alloc(1024); // 1024-2048
-  assert(block2 != NULL);
+    void *block1 = mem_alloc(512); // 0-1024
+    assert(block1 != NULL);
 
-  void *block3 = mem_alloc(2048); // 2048-4096
-  assert(block3 != NULL);
+    void *block2 = mem_alloc(1024); // 1024-2048
+    assert(block2 != NULL);
 
-  void *block4 = mem_alloc(904); // 4096-5000
-  assert(block4 != NULL);
+    void *block3 = mem_alloc(2048); // 2048-4096
+    assert(block3 != NULL);
 
-  printf("BLOCK0; %p, 512\n", block0);
-  printf("BLOCK1; %p, 512\n", block1);
-  printf("BLOCK2; %p, 1024\n", block2);
-  printf("BLOCK3; %p, 2048\n", block3);
-  printf("BLOCK4; %p, 904\n", block4);
-  
-  
-  mem_free(block0);
-  mem_free(block1);
-  mem_deinit();
-  printf("[PASS].\n");
+    void *block4 = mem_alloc(904); // 4096-5000
+    assert(block4 != NULL);
+
+    printf("BLOCK0; %p, 512\n", block0);
+    printf("BLOCK1; %p, 512\n", block1);
+    printf("BLOCK2; %p, 1024\n", block2);
+    printf("BLOCK3; %p, 2048\n", block3);
+    printf("BLOCK4; %p, 904\n", block4);
+
+    mem_free(block0);
+    mem_free(block1);
+    mem_deinit();
+    printf("[PASS].\n");
 }
 
 int main(int argc, char *argv[])
@@ -902,7 +902,7 @@ int main(int argc, char *argv[])
         printf("  0. tests various functions with a base number of threads\n");
         printf("  1. tests various functions across variious configurations (number of threads, memory sizes,  iterations)\n");
         printf("  2. stress tests various functions with various configurations. This may take some time (especially if simulate_work flag is set to true.\n");
-	printf("  3. test_looking_for_out_of_bounds, needs LD_PRELOAD=./libmymalloc.so .\n\n");	
+        printf("  3. test_looking_for_out_of_bounds, needs LD_PRELOAD=./libmymalloc.so .\n\n");
         return 1;
     }
 
@@ -981,9 +981,9 @@ int main(int argc, char *argv[])
         break;
 
     case 3:
-      printf("Test 3.\n");
-      test_looking_for_out_of_bounds();
-      break;
+        printf("Test 3.\n");
+        test_looking_for_out_of_bounds();
+        break;
 
     default:
         printf("Invalid test function\n");
