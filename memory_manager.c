@@ -1,7 +1,13 @@
 #include "memory_manager.h"
 
-bool should_debug = false;
-#define DEBUG(x) if (should_debug) (x);
+// For testing:
+// #define DEBUG_MODE 1
+
+#ifdef DEBUG_MODE
+    #define DEBUG(x) x
+#else
+    #define DEBUG(x)
+#endif
 
 pthread_mutex_t lock;
 
@@ -11,15 +17,17 @@ size_t s;
 memory_block* memory_block_head;
 int block_count = 0;
 
-//bool ignore_locks = false;
-
 // Initializes the memory manager, with a memory pool of size amount of bytes
 void mem_init(size_t size){
     DEBUG(printf("mem_init: %lu ", size));
 
+    // Creates recursive attribute for the mutex,
+    // which is important for the mem_resize() function
     pthread_mutexattr_t recursive_attr;
     pthread_mutexattr_init(&recursive_attr);
     pthread_mutexattr_settype(&recursive_attr, PTHREAD_MUTEX_RECURSIVE);
+
+    // Initialize the mutex lock with attribute
     pthread_mutex_init(&lock, NULL);
 
     memory = malloc(size);
@@ -35,18 +43,17 @@ void* mem_alloc(size_t size){
     pthread_mutex_lock(&lock);
 
     DEBUG(printf("mem_alloc: %lu ", size));
+
     //Walk through all memory blocks, trying to find a memory block that is large enough and free
     memory_block* walker = memory_block_head;
     while(walker != NULL && (!walker->free || walker->block_size < size)){
         walker = walker->next;
     }
 
-    //If it rejected all existing memory blocks, then allocation is impossible
+    //If it rejected all existing memory blocks, allocation is impossible
     if(walker == NULL){
         printf("ERROR, no space in memory! \n");
-
-        //if(!ignore_locks)
-            pthread_mutex_unlock(&lock);
+        pthread_mutex_unlock(&lock);
         return NULL;
     }
     
@@ -56,7 +63,7 @@ void* mem_alloc(size_t size){
         walker->free = false;
     }
     else{
-        // Otherwise, change the size of the chosen memory block, and fill out the rest of
+        // Change the size of the chosen memory block, and fill out the rest of
         // the space it previously occupied with a new empty memory block
 
         block_count++;
@@ -75,23 +82,26 @@ void* mem_alloc(size_t size){
     }    
 
     DEBUG(printf("at %lu ", (size_t)walker->start));
-    //if(!ignore_locks)
-        pthread_mutex_unlock(&lock);
+    pthread_mutex_unlock(&lock);
     return walker->start;
 }
 
 void mem_free(void* block){
     pthread_mutex_lock(&lock);
+
     DEBUG(printf("memfree: %lu ", (size_t)block));
 
-    memory_block* block_to_free = memory_block_head;
-    memory_block* block_preceding = NULL;
-
+    // Check if block is uninitiliazed
     if(block == NULL){
         pthread_mutex_unlock(&lock);
         return;
     }
 
+    // Default case
+    memory_block* block_to_free = memory_block_head;
+    memory_block* block_preceding = NULL;
+
+    // If block is not memory_block_head
     if(block_to_free->start != block){
         memory_block* walker = memory_block_head;
         while(walker != NULL && walker->next != NULL && ((memory_block*)walker->next)->start != block) {
@@ -101,8 +111,7 @@ void mem_free(void* block){
         // If it can't find the block, just return
         if(walker == NULL || walker->next == NULL){
             printf("ERROR, no such block to free! \n");
-            //if(!ignore_locks)
-                pthread_mutex_unlock(&lock);
+            pthread_mutex_unlock(&lock);
             return;
         }
 
@@ -112,16 +121,16 @@ void mem_free(void* block){
 
     // If the specified block was already free, just return
     if(block_to_free->free){
-        //if(!ignore_locks)
-            pthread_mutex_unlock(&lock);
+        pthread_mutex_unlock(&lock);
         return;
     }
-
 
     //Free the block
     block_to_free->free = true;
 
-    // Memory merging
+
+
+    // Memory merging:
 
     // Merge with previous block
     if(block_preceding != NULL && block_preceding->free){
@@ -141,13 +150,13 @@ void mem_free(void* block){
         block_count--;
     }
 
-    //if(!ignore_locks)
-        pthread_mutex_unlock(&lock);
+    pthread_mutex_unlock(&lock);
 }
 
 // Changes size of block
 void* mem_resize(void* block, size_t size){
     pthread_mutex_lock(&lock);
+    
     DEBUG(printf("mem_resize: %lu ", size));
 
     memory_block* block_to_resize = memory_block_head;
@@ -188,6 +197,9 @@ void* mem_resize(void* block, size_t size){
         block_preceding->next = block_to_resize->next;
         block_preceding->block_size += block_to_resize->block_size;
         block_count--;
+
+        //Should move old data to new
+
         free(block_to_resize);
 
         DEBUG(printf("Resized backward "));
@@ -197,7 +209,6 @@ void* mem_resize(void* block, size_t size){
     }
     else{
         // Allocate new block
-        //ignore_locks = true;
         void* new_block = mem_alloc(size);
         if(new_block != NULL){
             // Copy the data
@@ -206,12 +217,9 @@ void* mem_resize(void* block, size_t size){
             // Delete old block
             mem_free(block);
 
-
-            //ignore_locks = false;
-
             // Return the new block
             pthread_mutex_unlock(&lock);
-            return new_block;           
+            return new_block;
         } 
         else{
             printf("ERROR: No space for resized block!");
