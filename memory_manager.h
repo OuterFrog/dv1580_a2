@@ -2,6 +2,12 @@
 #define MEMORY_MANAGER_H
 
 #include <stddef.h> // For size_t
+#include <string.h>
+#include "memory_manager.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <stdbool.h>
+#include <pthread.h>
 
 // Helps C++ compilers to handle C header files
 #ifdef __cplusplus
@@ -13,6 +19,7 @@ extern "C"
         void* start;
         size_t block_size;
         _Bool free;
+        void* next;
     } memory_block;
 
     /**

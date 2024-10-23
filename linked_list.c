@@ -1,17 +1,24 @@
 #include "linked_list.h"
 
+pthread_rwlock_t rw_lock;
+
 // Initializes the list by intiliazing the memory_manager with a memory pool of 'size'
 void list_init(Node** head, size_t size){
+    pthread_rwlock_init(&rw_lock, NULL);
+
     mem_init(size);
     *head = NULL;
 }
 
 // Inserts new node with data of 'data' at the end of list
 void list_insert(Node** head, uint16_t data){
+    pthread_rwlock_wrlock(&rw_lock);
+
     Node* new_node = mem_alloc(sizeof(Node));
     if(new_node == 0){
         // Can't allocate new node
         printf("ERROR!");
+        pthread_rwlock_unlock(&rw_lock);
         return;
     }
     new_node->data = data;
@@ -37,28 +44,38 @@ void list_insert(Node** head, uint16_t data){
     // new_node->data = data;
     // new_node->next = *head;
     // *head = new_node;
+
+    pthread_rwlock_unlock(&rw_lock);
 }
 
 // Inserts a new node inbetween prev_node and prev_node->next
 void list_insert_after(Node* prev_node, uint16_t  data){
+    pthread_rwlock_wrlock(&rw_lock);
+
     Node* new_node = mem_alloc(sizeof(Node));
     if(new_node == 0){
         // Can't allocate new node
         printf("ERROR!");
+        pthread_rwlock_unlock(&rw_lock);
         return;
     }
     new_node->data = data;
     new_node->next = prev_node->next;
     prev_node->next = new_node;
+
+    pthread_rwlock_unlock(&rw_lock);
 }
 
 // Insert node with data 'data' before node 'next_node'. 
 // Uses 'head' to start traversing through the list
 void list_insert_before(Node** head, Node* next_node, uint16_t  data){
+    pthread_rwlock_wrlock(&rw_lock);
+
     Node* new_node = mem_alloc(sizeof(Node));
         if(new_node == 0){
         // Can't allocate new node
         printf("ERROR!");
+        pthread_rwlock_unlock(&rw_lock);
         return;
     }
     new_node->data = data;
@@ -80,12 +97,16 @@ void list_insert_before(Node** head, Node* next_node, uint16_t  data){
         new_node->next = next_node;
         walker->next = new_node;
     }
+
+    pthread_rwlock_unlock(&rw_lock);
 }
 
 // Delete the first node that contains 'data'
 void list_delete(Node** head, uint16_t  data){
+    pthread_rwlock_wrlock(&rw_lock);
     if(*head == NULL){
-        printf_red("ERROR: Deleting from empty list!");
+        printf("ERROR: Deleting from empty list!");
+        pthread_rwlock_unlock(&rw_lock);
         return;
     }
     
@@ -110,13 +131,18 @@ void list_delete(Node** head, uint16_t  data){
             }
         }
     }
+
+    pthread_rwlock_unlock(&rw_lock);
 }
 
 // Searches the list to find node containing 'data'
 Node* list_search(Node** head, uint16_t  data){
+    pthread_rwlock_rdlock(&rw_lock);
+
     // If the list is empty, immediately return NULL
     if(head == NULL){
-        printf_red("ERROR: head is null");
+        printf("ERROR: head is null");
+        pthread_rwlock_unlock(&rw_lock);
         return NULL;
     }
     
@@ -129,10 +155,12 @@ Node* list_search(Node** head, uint16_t  data){
     if (walker == NULL){
         // If it walks through the entire list and can't find 'data', 
         // then it doesn't exists, so return NULL
-        printf_red("ERROR: can't find data.");
+        printf("ERROR: can't find data.");
+        pthread_rwlock_unlock(&rw_lock);
         return NULL;
     }
     else{
+        pthread_rwlock_unlock(&rw_lock);
         return walker;
     }
 }
@@ -144,7 +172,8 @@ void list_display(Node** head){
 
 // Displays the entire list in format [0, 1, 2, 3, etc]
 void list_display_range(Node** head, Node* start_node, Node* end_node){
-    
+    pthread_rwlock_rdlock(&rw_lock);
+
     // By default, traversing starts at head, 
     // but if 'start node' is specified, start there instead
     Node* walker = *head;
@@ -159,10 +188,14 @@ void list_display_range(Node** head, Node* start_node, Node* end_node){
         printf(", %d", walker->data);
     }
     printf("]");
+
+    pthread_rwlock_unlock(&rw_lock);
 }
 
 // Counts amount of nodes in list by traversing through the whole list and increasing count for each one
 int list_count_nodes(Node** head){
+    pthread_rwlock_rdlock(&rw_lock);
+
     int count = 0;
     Node* walker = *head;
     while(walker != NULL){
@@ -170,11 +203,13 @@ int list_count_nodes(Node** head){
         walker = walker->next;
     }
 
+    pthread_rwlock_unlock(&rw_lock);
     return count;
 }
 
 // Deinitializes the list, by freeing all related memory
 void list_cleanup(Node** head){
+    pthread_rwlock_wrlock(&rw_lock);
     Node* walker = *head;
     
     // This is unneccessary
@@ -188,4 +223,7 @@ void list_cleanup(Node** head){
     // Deinitializes the memory
     mem_deinit();
     *head = NULL;
+
+    pthread_rwlock_unlock(&rw_lock);
+    //pthread_rwlock_destroy(&lock);
 }
