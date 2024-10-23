@@ -12,7 +12,7 @@ all: mmanager list test_mmanager test_list
 
 # Rule to create the dynamic library
 $(LIB_NAME): $(OBJ)
-	$(CC) -shared -o $@ $(OBJ)
+	$(CC) -shared $(CFLAGS) -o $@ $(OBJ)
 
 # Rule to compile source files into object files
 %.o: %.c

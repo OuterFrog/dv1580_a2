@@ -1,7 +1,7 @@
 #include "memory_manager.h"
 
 bool should_debug = false;
-#define DEBUG(x) if (should_debug) {x;}
+#define DEBUG(x) if (should_debug) (x);
 
 pthread_mutex_t lock;
 
@@ -15,7 +15,7 @@ int block_count = 0;
 
 // Initializes the memory manager, with a memory pool of size amount of bytes
 void mem_init(size_t size){
-    DEBUG(printf("mem_init: %d ", (int)size));
+    DEBUG(printf("mem_init: %lu ", size));
 
     pthread_mutexattr_t recursive_attr;
     pthread_mutexattr_init(&recursive_attr);
@@ -34,7 +34,7 @@ void mem_init(size_t size){
 void* mem_alloc(size_t size){
     pthread_mutex_lock(&lock);
 
-    DEBUG(printf("mem_alloc: %d ", (int)size));
+    DEBUG(printf("mem_alloc: %lu ", size));
     //Walk through all memory blocks, trying to find a memory block that is large enough and free
     memory_block* walker = memory_block_head;
     while(walker != NULL && (!walker->free || walker->block_size < size)){
@@ -74,7 +74,7 @@ void* mem_alloc(size_t size){
         walker->free = false;
     }    
 
-    DEBUG(printf("at %d ", (int)walker->start));
+    DEBUG(printf("at %lu ", (size_t)walker->start));
     //if(!ignore_locks)
         pthread_mutex_unlock(&lock);
     return walker->start;
@@ -82,7 +82,7 @@ void* mem_alloc(size_t size){
 
 void mem_free(void* block){
     pthread_mutex_lock(&lock);
-    DEBUG(printf("memfree: %d ", (int)block));
+    DEBUG(printf("memfree: %lu ", (size_t)block));
 
     memory_block* block_to_free = memory_block_head;
     memory_block* block_preceding = NULL;
@@ -148,7 +148,7 @@ void mem_free(void* block){
 // Changes size of block
 void* mem_resize(void* block, size_t size){
     pthread_mutex_lock(&lock);
-    DEBUG(printf("mem_resize: %d ", (int)size));
+    DEBUG(printf("mem_resize: %lu ", size));
 
     memory_block* block_to_resize = memory_block_head;
     memory_block* block_preceding = NULL;
