@@ -1,7 +1,7 @@
 #include "memory_manager.h"
 
 // For testing:
-// #define DEBUG_MODE 1
+#define DEBUG_MODE 1
 
 #ifdef DEBUG_MODE
     #define DEBUG(x) x
@@ -28,7 +28,7 @@ void mem_init(size_t size){
     pthread_mutexattr_settype(&recursive_attr, PTHREAD_MUTEX_RECURSIVE);
 
     // Initialize the mutex lock with attribute
-    pthread_mutex_init(&lock, NULL);
+    pthread_mutex_init(&lock, &recursive_attr);
 
     memory = malloc(size);
     s = size;
@@ -198,7 +198,10 @@ void* mem_resize(void* block, size_t size){
         block_preceding->block_size += block_to_resize->block_size;
         block_count--;
 
-        //Should move old data to new
+        //Move the data
+        memcpy(block_preceding->start, block, block_to_resize->block_size);
+
+        DEBUG(printf("Old address: %lu, new address: %lu.", (size_t)block_to_resize->start, (size_t)block_preceding->start));
 
         free(block_to_resize);
 
@@ -220,7 +223,7 @@ void* mem_resize(void* block, size_t size){
             // Return the new block
             pthread_mutex_unlock(&lock);
             return new_block;
-        } 
+        }
         else{
             printf("ERROR: No space for resized block!");
             pthread_mutex_unlock(&lock);
