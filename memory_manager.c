@@ -1,7 +1,7 @@
 #include "memory_manager.h"
 
 // For testing:
-#define DEBUG_MODE 1
+// #define DEBUG_MODE 1
 
 #ifdef DEBUG_MODE
     #define DEBUG(x) x
