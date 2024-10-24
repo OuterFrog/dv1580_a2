@@ -1,7 +1,7 @@
 #include "memory_manager.h"
 
 // For testing:
-// #define DEBUG_MODE 1
+#define DEBUG_MODE 1
 
 #ifdef DEBUG_MODE
     #define DEBUG(x) x
@@ -199,7 +199,7 @@ void* mem_resize(void* block, size_t size){
         block_count--;
 
         //Move the data
-        memcpy(block_preceding->start, block, block_to_resize->block_size);
+        memmove(block_preceding->start, block, block_to_resize->block_size);
 
         DEBUG(printf("Old address: %lu, new address: %lu.", (size_t)block_to_resize->start, (size_t)block_preceding->start));
 
